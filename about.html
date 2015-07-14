@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>About</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.2  (Unix)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGEDBY" CONTENT="Chris White">
+	<META NAME="CHANGED" CONTENT="20120201;21564400">
+
+	<style type="text/css">
+	BODY {
+	 color: #000000;
+	  background: #FFFFFF;
+	  border: 3px double #CCCCCC;
+	  padding: 10px;
+	}
+	A:link{color:#2E9AFE}
+	A:visited{color:#2E9AFE}
+	</style>
+
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<h4>How the Solver Works</h4><br>
+<h5><b>>> The Rules</b></h5>
+Recall the rules of <a href="http://en.wikipedia.org/wiki/Sudoku">Sudoku</a>: the goal is to fill in the given 9 x 9 grid with digits 1-9 subject to the following rules:<br>
+<ul><li>Every row must contain one and only one instance of each digit 1-9</li> 
+<li>Every column must contain one and only one instance of each digit 1-9</li>
+<li>Each of the basic 3 x 3 squares must contain one and only one instance of each digit 1-9</li>
+</ul>  
+<br>
+
+<!--Here I will present a method for solving Sudoku puzzles that treats easy puzzles on an equal footing as the hardest Sudoku puzzle.  -->
+<h5><b>>> A Reformulation</b></h5>
+Any puzzle can be broken down into 9 different grids - each grid tells us the locations of a given digit.  For example, the "indicator grid"
+corresponding to the digit '3' will have a '1' anywhere there is a '3' in the input puzzle, and a '0' everywhere else.  <br>
+<br>
+We can then rephrase the above Sudoku rules as <i>linear</i> constraints on the set of indicator grids:<br>
+<ul>
+<li>For each indicator grid, the entries in every row must sum to 1</li>
+<li>For each indicator grid, the entries in every column must sum to 1</li>
+<li>For each indicator grid, the entries within each basic 3 x 3 square must sum to 1</li>
+<li>The locations of the 1's in each pair of indicator grids must be <i>disjoint</i> (i.e., distinct)</li>
+</ul>
+Notice that this last constraint is necessary: if we found a single grid which satisfies the above constraints and then duplicated it 9 times, we would still satisfy all the constraints -- but clearly this collection of grids does not correspond to a solved Sudoku puzzle! 
+<br>
+<br>
+<br>
+<h5><b>>> The Algorithm</b></h5>
+With this setup, we are looking for a vector of length 81*9 = 729 consisting entirely of 0's and 1's that satisfy the linear constraints above and agrees with the inputted puzzle.  This is an example of a <a href="https://en.wikipedia.org/wiki/Integer_programming">binary integer programming</a> problem or a <a href="https://en.wikipedia.org/wiki/Constraint_satisfaction_problem">constraint satisfaction problem</a>. <br>
+<br> One way of solving such problems is to introduce a new set of binary variables (one for each constraint), and add each variable to its corresponding constraint.  We think of these new variables as 'slack' variables for each constraint; a solution will be one with no slack, i.e., we now attempt to minimize the sum of the slack variables.  The algorithm just described is equivalent to solving Phase 1 of the <a href="https://en.wikipedia.org/wiki/Simplex_algorithm">Simplex Method</a> subject to binary constraints. <br>
+<br>
+<br>
+<h5><b>>> The Implementation</b></h5>
+After coding the above constraints into a large binary matrix, we call the <i>lpSolve()</i> function<br> from the R package <a href="http://cran.r-project.org/web/packages/lpSolve/index.html">lpSolve</a>, which has a built-in Two-Phase Simplex Method, and enforces binary constraints via the <a href="http://en.wikipedia.org/wiki/Branch_and_cut">branch-and-bound</a> method.  This returns a length 729 binary vector which we then recast as the solution in the standard Sudoku format.<br>
+<br>
+<h5><b>>> Notes</b></h5>
+<ul>
+<li>This method can handle completely blank puzzles; the inital puzzle constraint just disappears.  Consequently we can generate new puzzles by randomly initializing Phase 1 of the Simplex Method.  However, in this particular implementation the <i>generateSudoku()</i> function from the <a href="http://cran.r-project.org/web/packages/sudoku/index.html">sudoku</a> R package was used.</li>
+<li>The subjective difficulty of a puzzle is completely irrelevant in this setup; all puzzles are treated equally.</li>
+</ul>
+</body>
+</html>
